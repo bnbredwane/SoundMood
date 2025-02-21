@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "371629161867",
+    "project_id": "applications-web2-tp1-equipe",
+    "storage_bucket": "applications-web2-tp1-equipe.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:371629161867:android:81a4763d1648120ebdc38e",
+        "android_client_info": {
+          "package_name": "com.example.soundmood"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "371629161867-v4lf2rlkn8ab3c2geiq6ifqmeahp5jcd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAanpFaxqoM1SmYvPG2kWFEjt8bPkZbdbU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "371629161867-8im72fchql72ao389684pbi4sk7rn5r0.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "371629161867-2qk0ue03mlp0505tjn9m1iiuge4t991f.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.soundmood"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

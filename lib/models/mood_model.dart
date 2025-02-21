@@ -1,7 +1,8 @@
+//mood_model
 class Mood {
   final String name;
   final String emoji;
-  final List<String> genres; // These serve as tag names for Last.fm
+  final List<String> genres;
 
   Mood(this.name, this.emoji, this.genres);
 

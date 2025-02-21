@@ -3,7 +3,7 @@ class Track {
   final String name;
   final String artist;
   final String albumArt;
-  final String uri;
+  final String url;
   final int duration;
 
   Track({
@@ -11,18 +11,10 @@ class Track {
     required this.name,
     required this.artist,
     required this.albumArt,
-    required this.uri,
+    required this.url,
     required this.duration,
   });
 
-  // Factory constructor to create a Track from Deezer JSON.
-  // Deezer returns:
-  // - 'id' (an integer)
-  // - 'title' (the track title)
-  // - 'duration' (in seconds)
-  // - 'preview' (URL for a 30-second preview)
-  // - 'album' (an object with cover images, e.g. 'cover_big')
-  // - 'artist' (an object with the artist's name)
   factory Track.fromDeezerJson(Map<String, dynamic> json) {
     String albumArt = '';
     if (json['album'] != null) {
@@ -34,7 +26,18 @@ class Track {
       name: json['title'] ?? '',
       artist: artistName,
       albumArt: albumArt,
-      uri: json['preview'] ?? '',
+      url: json['preview'] ?? '',
+      duration: json['duration'] ?? 0,
+    );
+  }
+
+  factory Track.fromJson(Map<String, dynamic> json) {
+    return Track(
+      id: json['id']?.toString() ?? '',
+      name: json['name'] ?? '',
+      artist: json['artist'] ?? '',
+      albumArt: json['albumArt'] ?? '',
+      url: json['url'] ?? '',
       duration: json['duration'] ?? 0,
     );
   }
