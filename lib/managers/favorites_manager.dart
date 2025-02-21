@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:soundmood/models/track_model.dart';
 
 class FavoritesManager {
-  // Toggle favorite status in Firestore.
   static Future<void> toggleFavorite(Track track) async {
     final userDoc =
     FirebaseFirestore.instance.collection("users").doc("currentUser");

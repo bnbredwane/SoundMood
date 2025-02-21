@@ -5,11 +5,10 @@ import 'package:http/http.dart' as http;
 import '../models/track_model.dart';
 
 class DeezerService {
-
   static const String _baseUrl = 'https://api.deezer.com';
 
   static Future<List<Track>> searchTracks(String query) async {
-    final url = '$_baseUrl/search?q=$query&limit=20';
+    final url = '$_baseUrl/search?q=$query';
     debugPrint('Requesting Deezer URL: $url');
     final response = await http.get(Uri.parse(url));
     if (response.statusCode == 200) {

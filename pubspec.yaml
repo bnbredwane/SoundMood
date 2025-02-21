@@ -34,7 +34,7 @@ dependencies:
   url_launcher: ^6.1.7
   flutter_dotenv: ^5.0.2
   carousel_slider: ^4.2.1
-  flutter_secure_storage: ^8.0.0
+  flutter_secure_storage: 4.2.1
   provider: ^6.0.5
   flutter_appauth: ^2.1.0
   google_fonts: ^4.0.4
@@ -42,11 +42,20 @@ dependencies:
   cloud_firestore: 5.6.4
   firebase_auth: ^5.5.0
 
+  ffi: ^2.0.0
+  tflite_flutter: ^0.11.0
+  universal_platform: ^1.0.0
+  tflite_web: ^0.2.2
+  shared_preferences: ^2.2.2
+  path_provider: ^2.1.1
+
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
   just_audio: ^0.9.46
   firebase_core: ^3.12.0
+  firebase_ml_model_downloader: ^0.3.3+1 
+  firebase_ml_custom: ^0.2.0
 
 dev_dependencies:
   flutter_test:
@@ -71,6 +80,8 @@ flutter:
   uses-material-design: true
   assets:
     - .env
+    - assets/default-icon.png
+    - assets/mood_model.tflite
   # To add assets to your application, add an assets section, like this:
   # assets:
   #   - images/a_dot_burr.jpeg

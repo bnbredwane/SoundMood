@@ -4,7 +4,7 @@ import 'package:soundmood/services/deezer_service.dart';
 import 'track_details_screen.dart';
 
 class SearchScreen extends StatefulWidget {
-  const SearchScreen({Key? key}) : super(key: key);
+  const SearchScreen({super.key});
 
   @override
   State<SearchScreen> createState() => _SearchScreenState();
@@ -67,7 +67,6 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-
             TextField(
               controller: _searchController,
               onChanged: _searchTracks,
@@ -86,7 +85,8 @@ class _SearchScreenState extends State<SearchScreen> {
             ),
             const SizedBox(height: 16),
             if (_isLoading)
-              const Center(child: CircularProgressIndicator(color: Colors.white)),
+              const Center(
+                  child: CircularProgressIndicator(color: Colors.white)),
             if (_errorMessage.isNotEmpty)
               Center(
                 child: Text(
@@ -94,45 +94,45 @@ class _SearchScreenState extends State<SearchScreen> {
                   style: const TextStyle(color: Colors.white),
                 ),
               ),
-
             Expanded(
               child: _tracks.isEmpty && !_isLoading
                   ? const Center(
-                child: Text(
-                  "No results",
-                  style: TextStyle(color: Colors.white70),
-                ),
-              )
+                      child: Text(
+                        "No results",
+                        style: TextStyle(color: Colors.white70),
+                      ),
+                    )
                   : ListView.builder(
-                itemCount: _tracks.length,
-                itemBuilder: (context, index) {
-                  final track = _tracks[index];
-                  return ListTile(
-                    leading: Image.network(
-                      track.albumArt,
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
+                      itemCount: _tracks.length,
+                      itemBuilder: (context, index) {
+                        final track = _tracks[index];
+                        return ListTile(
+                          leading: Image.network(
+                            track.albumArt,
+                            width: 50,
+                            height: 50,
+                            fit: BoxFit.cover,
+                          ),
+                          title: Text(
+                            track.name,
+                            style: const TextStyle(color: Colors.white),
+                          ),
+                          subtitle: Text(
+                            track.artist,
+                            style: const TextStyle(color: Colors.white70),
+                          ),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    TrackDetailsScreen(track: track),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
-                    title: Text(
-                      track.name,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    subtitle: Text(
-                      track.artist,
-                      style: const TextStyle(color: Colors.white70),
-                    ),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => TrackDetailsScreen(track: track),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
             ),
           ],
         ),

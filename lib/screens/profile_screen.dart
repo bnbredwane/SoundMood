@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:soundmood/models/track_model.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({Key? key}) : super(key: key);
+  const ProfileScreen({super.key});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -42,9 +42,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           .collection("users")
           .doc(cred.user!.uid)
           .set({
-        "username": "New User",
+        "username": "Test",
         "email": cred.user!.email,
-        "profilePic": "assets/profile.jpg",
+        "profilePic": "assets/default-icon.png",
         "followers": 0,
         "following": 0,
         "favorites": [],
@@ -176,12 +176,14 @@ class _AuthForm extends StatelessWidget {
         TextField(
           controller: emailController,
           decoration: _inputDecoration("Email"),
+          style: const TextStyle(color: Colors.white),
           keyboardType: TextInputType.emailAddress,
         ),
         const SizedBox(height: 16),
         TextField(
           controller: passwordController,
           decoration: _inputDecoration("Password"),
+          style: const TextStyle(color: Colors.white),
           obscureText: true,
         ),
         const SizedBox(height: 20),
@@ -263,7 +265,7 @@ class _ProfileContent extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             data["username"] ?? "User",
-            style: const TextStyle(color: Colors.white, fontSize: 20),
+            style: const TextStyle(color: Colors.white70, fontSize: 20),
           ),
           const SizedBox(height: 8),
           Text(
@@ -284,7 +286,8 @@ class _ProfileContent extends StatelessWidget {
                 borderRadius: BorderRadius.circular(20),
               ),
             ),
-            child: const Text("Edit Profile", style: TextStyle(color: Colors.white)),
+            child: const Text("Edit Profile",
+                style: TextStyle(color: Colors.white)),
           ),
           const SizedBox(height: 40),
           const Align(
@@ -296,16 +299,18 @@ class _ProfileContent extends StatelessWidget {
           ),
           const SizedBox(height: 16),
           favorites.isEmpty
-              ? const Text("No favorites yet", style: TextStyle(color: Colors.white70))
+              ? const Text("No favorites yet",
+                  style: TextStyle(color: Colors.white70))
               : SizedBox(
-            height: 150,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: favorites.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 16),
-              itemBuilder: (context, index) => _TrackItem(track: favorites[index]),
-            ),
-          ),
+                  height: 150,
+                  child: ListView.separated(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: favorites.length,
+                    separatorBuilder: (_, __) => const SizedBox(width: 16),
+                    itemBuilder: (context, index) =>
+                        _TrackItem(track: favorites[index]),
+                  ),
+                ),
         ],
       ),
     );

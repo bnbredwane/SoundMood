@@ -9,12 +9,12 @@ class TrackDetailWidget extends StatelessWidget {
   final VoidCallback onTogglePlayPause;
 
   const TrackDetailWidget({
-    Key? key,
+    super.key,
     required this.track,
     required this.audioPlayer,
     required this.isPlaying,
     required this.onTogglePlayPause,
-  }) : super(key: key);
+  });
 
   String _formatDuration(Duration duration) {
     String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -132,7 +132,8 @@ class TrackDetailWidget extends StatelessWidget {
                   const SizedBox(height: 16),
                   // Bottom row of controls.
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 32, vertical: 16),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -163,9 +164,7 @@ class TrackDetailWidget extends StatelessWidget {
                         ),
 
                         IconButton(
-                          onPressed: () {
-
-                          },
+                          onPressed: () {},
                           icon: const Icon(Icons.share),
                           color: Colors.white,
                           iconSize: 24,
