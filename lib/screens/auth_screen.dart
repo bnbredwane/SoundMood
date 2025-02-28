@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -22,6 +24,19 @@ class _AuthScreenState extends State<AuthScreen> {
     return true;
   }
 
+  Future<String> generateUsername(String email) async {
+    // Get a random user from the randomuser.me API.
+    final response = await http.get(Uri.parse('https://randomuser.me/api/'));
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final randomUsername = data['results'][0]['login']['username'];
+      final emailPrefix = email.split('@')[0];
+      return '$emailPrefix-$randomUsername';
+    } else {
+      throw Exception("Failed to generate username");
+    }
+  }
+
   Future<void> _signIn() async {
     if (!_validateForm()) return;
     setState(() => _isLoading = true);
@@ -30,8 +45,7 @@ class _AuthScreenState extends State<AuthScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
-      // On successful sign in, navigate to ProfileScreen.
-      Navigator.pushReplacementNamed(context, '/profile');
+      Navigator.pushReplacementNamed(context, '/');
     } on FirebaseAuthException catch (e) {
       _showError(e.message ?? "Sign in failed");
     } finally {
@@ -47,19 +61,24 @@ class _AuthScreenState extends State<AuthScreen> {
         email: _emailController.text.trim(),
         password: _passwordController.text,
       );
+      final randomUsername =
+          await generateUsername(_emailController.text.trim());
+
+      final lowercaseUsername = randomUsername.toLowerCase();
+
       await FirebaseFirestore.instance
           .collection("users")
           .doc(cred.user!.uid)
           .set({
-        "username": "Test",
+        "username": randomUsername,
+        "username_lowercase": lowercaseUsername,
         "email": cred.user!.email,
         "profilePic": "assets/default-icon.png",
-        "followers": 0,
-        "following": 0,
+        "followers": [],
+        "following": [],
         "favorites": [],
       });
-      // On successful sign up, navigate to ProfileScreen.
-      Navigator.pushReplacementNamed(context, '/profile');
+      Navigator.pushReplacementNamed(context, '/');
     } on FirebaseAuthException catch (e) {
       _showError(e.message ?? "Sign up failed");
     } finally {

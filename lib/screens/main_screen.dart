@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:soundmood/screens/player_screen.dart';
 import 'package:soundmood/screens/search_screen.dart';
 import 'package:soundmood/screens/profile_screen.dart';
+import 'package:soundmood/screens/auth_screen.dart';
 import '../utils/constants.dart';
 
 class MainScreen extends StatefulWidget {
@@ -15,11 +17,16 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
 
-  final List<Widget> _screens = const [
-    PlayerScreen(),
-    SearchScreen(),
-    ProfileScreen(),
-  ];
+  // Dynamically return the profile screen based on authentication state.
+  Widget get profileScreen {
+    final currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      return UserProfileScreen(userId: currentUser.uid, isCurrentUser: true);
+    } else {
+      // Return AuthScreen if no user is logged in.
+      return const AuthScreen();
+    }
+  }
 
   @override
   void dispose() {
@@ -29,12 +36,18 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final List<Widget> screens = [
+      const PlayerScreen(),
+      const SearchScreen(),
+      profileScreen,
+    ];
+
     return Scaffold(
       extendBody: true,
       body: PageView(
         controller: _pageController,
         physics: const NeverScrollableScrollPhysics(),
-        children: _screens,
+        children: screens,
       ),
       bottomNavigationBar: _ModernNavBar(
         currentIndex: _currentIndex,

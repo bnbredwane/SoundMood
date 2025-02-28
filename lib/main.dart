@@ -3,12 +3,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:soundmood/screens/auth_screen.dart';
+import 'package:soundmood/screens/edit_profile_screen.dart';
 import 'package:soundmood/screens/main_screen.dart';
 import 'package:soundmood/screens/profile_screen.dart';
 import 'package:soundmood/screens/search_screen.dart';
-import 'package:soundmood/utils/constants.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
+import 'package:soundmood/utils/constants.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,8 +50,15 @@ class SoundMoodApp extends StatelessWidget {
         '/': (context) => const MainScreen(),
         '/main': (context) => const MainScreen(),
         '/search': (context) => const SearchScreen(),
-        '/profile': (context) => const ProfileScreen(),
+        '/profile': (context) {
+          final user = FirebaseAuth.instance.currentUser;
+          if (user == null) {
+            return const AuthScreen();
+          }
+          return UserProfileScreen(userId: user.uid, isCurrentUser: true);
+        },
         '/login': (context) => const AuthScreen(),
+        '/editprofile': (context) => const EditProfileScreen(),
       },
     );
   }

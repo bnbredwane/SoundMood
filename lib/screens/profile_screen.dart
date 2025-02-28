@@ -1,50 +1,68 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
+import 'package:soundmood/components/custom_scroll.dart';
+import 'package:soundmood/managers/follow_manager.dart'; // Utilise vos fonctions followUser et unfollowUser depuis follow_manager
+import 'auth_screen.dart';
+import 'track_details_screen.dart';
 import 'package:soundmood/models/track_model.dart';
-import 'auth_screen.dart'; // Ensure this is the correct path to your AuthScreen
-import 'track_details_screen.dart'; // Import the TrackDetailsScreen
 
-/// Custom scroll behavior to allow dragging with mouse, touch, and trackpad.
-class MyCustomScrollBehavior extends MaterialScrollBehavior {
+class UserProfileScreen extends StatefulWidget {
+  /// userId correspond à l'UID du profil à afficher.
+  /// Si isCurrentUser vaut true, on affiche le profil du propriétaire et on propose « Edit Profile ».
+  final String userId;
+  final bool isCurrentUser;
+
+  const UserProfileScreen({
+    Key? key,
+    required this.userId,
+    this.isCurrentUser = false,
+  }) : super(key: key);
+
   @override
-  Set<PointerDeviceKind> get dragDevices => {
-        PointerDeviceKind.touch,
-        PointerDeviceKind.mouse,
-        PointerDeviceKind.trackpad,
-      };
+  _UserProfileScreenState createState() => _UserProfileScreenState();
 }
 
-class ProfileScreen extends StatelessWidget {
-  const ProfileScreen({super.key});
+class _UserProfileScreenState extends State<UserProfileScreen> {
+  bool isFollowing = false;
+
+  // Permet de basculer le statut de follow pour un utilisateur
+  void _toggleFollow(String targetUserId) async {
+    if (isFollowing) {
+      await unfollowUser(
+          targetUserId); // Fonction définie dans follow_manager.dart
+    } else {
+      await followUser(targetUserId);
+    }
+    setState(() {
+      isFollowing = !isFollowing;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      // If no user is signed in, display the AuthScreen with the login/signup form.
-      return const AuthScreen();
-    }
-
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         title: const Text("Profile", style: TextStyle(color: Colors.white)),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              // After signing out, the build method will show the AuthScreen.
-            },
-          ),
+          if (widget.isCurrentUser)
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () async {
+                await FirebaseAuth.instance.signOut();
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const AuthScreen()),
+                );
+              },
+            ),
         ],
       ),
       body: StreamBuilder<DocumentSnapshot>(
         stream: FirebaseFirestore.instance
             .collection("users")
-            .doc(user.uid)
+            .doc(widget.userId)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
@@ -59,115 +77,126 @@ class ProfileScreen extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           final data = snapshot.data!.data() as Map<String, dynamic>;
-          return _ProfileContent(data: data);
-        },
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 2, // Assuming Profile is the third tab
-        backgroundColor: Colors.black,
-        selectedItemColor: Colors.deepPurpleAccent,
-        unselectedItemColor: Colors.white70,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: "Home",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.search),
-            label: "Search",
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person),
-            label: "Profile",
-          ),
-        ],
-        onTap: (index) {
-          // Handle navigation based on the selected index.
-          if (index == 0) {
-            Navigator.pushReplacementNamed(context, '/main');
-          } else if (index == 1) {
-            Navigator.pushReplacementNamed(
-                context, '/search'); // Ensure you have a '/search' route
+
+          // Si le profil affiché n'est pas celui de l'utilisateur courant,
+          // on met à jour le statut de follow
+          if (!widget.isCurrentUser) {
+            final currentUserId = FirebaseAuth.instance.currentUser!.uid;
+            List followers = data["followers"] ?? [];
+            if (followers.contains(currentUserId) != isFollowing) {
+              // On met à jour le booléen de manière asynchrone
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                setState(() {
+                  isFollowing = followers.contains(currentUserId);
+                });
+              });
+            }
           }
-          // Index 2 is Profile (current screen), so do nothing.
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(8),
+            child: Column(
+              children: [
+                CircleAvatar(
+                  radius: 50,
+                  backgroundImage: _getProfileImage(data["profilePic"]),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  data["username"] ?? "User",
+                  style: const TextStyle(color: Colors.white70, fontSize: 20),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  data["email"] ?? "",
+                  style: const TextStyle(color: Colors.white70),
+                ),
+                const SizedBox(height: 16),
+                _SocialStats(
+                  followers: data["followers"] != null
+                      ? (data["followers"] as List).length
+                      : 0,
+                  following: data["following"] != null
+                      ? (data["following"] as List).length
+                      : 0,
+                ),
+                const SizedBox(height: 20),
+                // Si c'est le profil du propriétaire, on affiche « Edit Profile »
+                // Sinon, on affiche le bouton Follow/Unfollow
+                widget.isCurrentUser
+                    ? ElevatedButton(
+                        onPressed: () {
+                          Navigator.pushNamed(context, '/editprofile');
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white10,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: const Text(
+                          "Edit Profile",
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      )
+                    : ElevatedButton(
+                        onPressed: () {
+                          _toggleFollow(widget.userId);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isFollowing
+                              ? Colors.grey
+                              : Colors.blue, // couleur selon le statut
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Text(
+                          isFollowing ? "Unfollow" : "Follow",
+                          style: const TextStyle(color: Colors.white),
+                        ),
+                      ),
+                const SizedBox(height: 40),
+                const Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    "Favorite Music",
+                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                _buildFavorites(data),
+              ],
+            ),
+          );
         },
       ),
     );
   }
-}
 
-class _ProfileContent extends StatelessWidget {
-  final Map<String, dynamic> data;
-  const _ProfileContent({required this.data, super.key});
+  /// Construit la liste des musiques favorites à partir des données utilisateur
+  Widget _buildFavorites(Map<String, dynamic> data) {
+    if (data["favorites"] == null) {
+      return const Text("No favorites yet",
+          style: TextStyle(color: Colors.white70));
+    }
+    final List favorites = data["favorites"] as List<dynamic>;
+    if (favorites.isEmpty) {
+      return const Text("No favorites yet",
+          style: TextStyle(color: Colors.white70));
+    }
+    List<Track> tracks = favorites.map((fav) => Track.fromJson(fav)).toList();
 
-  @override
-  Widget build(BuildContext context) {
-    final List<Track> favorites = (data["favorites"] as List<dynamic>)
-        .map((fav) => Track.fromJson(fav))
-        .toList();
-
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(8),
-      child: Column(
-        children: [
-          CircleAvatar(
-            radius: 50,
-            backgroundImage: _getProfileImage(data["profilePic"]),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            data["username"] ?? "User",
-            style: const TextStyle(color: Colors.white70, fontSize: 20),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            data["email"] ?? "",
-            style: const TextStyle(color: Colors.white70),
-          ),
-          const SizedBox(height: 16),
-          _SocialStats(
-            followers: data["followers"] ?? 0,
-            following: data["following"] ?? 0,
-          ),
-          const SizedBox(height: 20),
-          ElevatedButton(
-            onPressed: () {
-              // Navigate to edit profile.
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.white10,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-            ),
-            child: const Text("Edit Profile",
-                style: TextStyle(color: Colors.white)),
-          ),
-          const SizedBox(height: 40),
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              "Favorite Music",
-              style: TextStyle(color: Colors.white, fontSize: 18),
-            ),
-          ),
-          const SizedBox(height: 16),
-          favorites.isEmpty
-              ? const Text("No favorites yet",
-                  style: TextStyle(color: Colors.white70))
-              : SizedBox(
-                  height: 220,
-                  child: ScrollConfiguration(
-                    behavior: MyCustomScrollBehavior(),
-                    child: PageView.builder(
-                      controller: PageController(viewportFraction: 0.6),
-                      itemCount: favorites.length,
-                      itemBuilder: (context, index) =>
-                          _TrackItem(track: favorites[index]),
-                    ),
-                  ),
-                ),
-        ],
+    return SizedBox(
+      height: 220,
+      child: ScrollConfiguration(
+        behavior: MyCustomScrollBehavior(),
+        child: PageView.builder(
+          padEnds: false, // This disables the automatic left/right padding.
+          controller: PageController(viewportFraction: 0.3),
+          itemCount: tracks.length,
+          itemBuilder: (context, index) => _TrackItem(track: tracks[index]),
+        ),
       ),
     );
   }
@@ -184,7 +213,8 @@ class _SocialStats extends StatelessWidget {
   final int followers;
   final int following;
   const _SocialStats(
-      {required this.followers, required this.following, super.key});
+      {required this.followers, required this.following, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -202,16 +232,15 @@ class _SocialStats extends StatelessWidget {
 class _StatItem extends StatelessWidget {
   final int value;
   final String label;
-  const _StatItem({required this.value, required this.label, super.key});
+  const _StatItem({required this.value, required this.label, Key? key})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Text(
-          value.toString(),
-          style: const TextStyle(color: Colors.white, fontSize: 18),
-        ),
+        Text(value.toString(),
+            style: const TextStyle(color: Colors.white, fontSize: 18)),
         Text(label, style: const TextStyle(color: Colors.white70)),
       ],
     );
