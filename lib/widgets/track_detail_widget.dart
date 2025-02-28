@@ -3,6 +3,7 @@ import 'package:just_audio/just_audio.dart';
 import 'package:soundmood/models/track_model.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:share_plus/share_plus.dart';
 
 class TrackDetailWidget extends StatelessWidget {
@@ -262,7 +263,7 @@ class TrackDetailWidget extends StatelessWidget {
                         ),
                         IconButton(
                           onPressed: () => Share.share(
-                            'Check out "${track.name}" by ${track.artist} '
+                            'Listen to "${track.name}" by ${track.artist} '
                             'on SoundMood: ${track.url}',
                           ),
                           icon: const Icon(Icons.share),

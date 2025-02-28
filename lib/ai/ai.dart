@@ -160,25 +160,22 @@ class MoodRecommender {
   static MoodPreferences adaptCoefficients({
     required MoodPreferences preferences,
     required String selectedMood,
-    required double successScore, // 0-1 based on user engagement
+    required double successScore,
   }) {
     final newCoefficients = Map.of(preferences.coefficients);
     final currentCoeffs = List.of(newCoefficients[selectedMood]!);
     final targetIndex = moodNames.indexOf(selectedMood);
 
-    // Reinforce self-correlation
     currentCoeffs[targetIndex] =
         (currentCoeffs[targetIndex] + _learningRate * successScore)
             .clamp(0.1, 0.9);
 
-    // Apply decay to other coefficients
     for (int i = 0; i < currentCoeffs.length; i++) {
       if (i != targetIndex) {
         currentCoeffs[i] = (currentCoeffs[i] * _decayFactor).clamp(0.05, 0.8);
       }
     }
 
-    // Normalize
     final sum = currentCoeffs.sum();
     newCoefficients[selectedMood] = currentCoeffs.map((c) => c / sum).toList();
 
@@ -192,7 +189,6 @@ class MoodRecommender {
   }
 }
 
-// Extension helpers
 extension SumIterable on Iterable<double> {
   double sum() => fold(0.0, (a, b) => a + b);
 }
