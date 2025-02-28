@@ -18,11 +18,9 @@ class SearchScreen extends StatefulWidget {
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
 
-  // Recent searches for tracks and profiles.
   List<Track> _recentTracks = [];
   List<Map<String, dynamic>> _recentProfiles = [];
 
-  // Search results for tracks and users.
   List<Track> _tracks = [];
   List<DocumentSnapshot> _users = [];
 
@@ -30,7 +28,6 @@ class _SearchScreenState extends State<SearchScreen> {
   String _errorMessage = '';
   SearchMode _searchMode = SearchMode.tracks;
 
-  // LOAD RECENTS FOR TRACKS
   Future<void> _loadRecentTracks() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -49,7 +46,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // UPDATE RECENTS FOR TRACKS
   Future<void> _updateRecentTracks(Track track) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -67,7 +63,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // LOAD RECENTS FOR PROFILES
   Future<void> _loadRecentProfiles() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -85,7 +80,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // UPDATE RECENTS FOR PROFILES
   Future<void> _updateRecentProfiles(Map<String, dynamic> profileData) async {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -160,7 +154,6 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  // Build track search results.
   Widget _buildTrackResults() {
     if (_tracks.isEmpty && !_isLoading) {
       return const Center(
@@ -201,7 +194,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Build user search results.
   Widget _buildUserResults() {
     if (_users.isEmpty && !_isLoading) {
       return const Center(
@@ -246,7 +238,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Build recent track searches.
   Widget _buildRecentTrackSearches() {
     if (_recentTracks.isEmpty) {
       return const Center(
@@ -291,7 +282,6 @@ class _SearchScreenState extends State<SearchScreen> {
     );
   }
 
-  // Build recent profile searches.
   Widget _buildRecentProfileSearches() {
     if (_recentProfiles.isEmpty) {
       return const Center(
@@ -399,7 +389,7 @@ class _SearchScreenState extends State<SearchScreen> {
               controller: _searchController,
               onChanged: (query) {
                 if (query.isEmpty) {
-                  setState(() {}); // triggers display of recents
+                  setState(() {});
                 } else {
                   _search(query);
                 }

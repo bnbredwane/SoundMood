@@ -25,7 +25,6 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<String> generateUsername(String email) async {
-    // Get a random user from the randomuser.me API.
     final response = await http.get(Uri.parse('https://randomuser.me/api/'));
     if (response.statusCode == 200) {
       final data = json.decode(response.body);

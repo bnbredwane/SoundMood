@@ -2,14 +2,12 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:soundmood/components/custom_scroll.dart';
-import 'package:soundmood/managers/follow_manager.dart'; // Utilise vos fonctions followUser et unfollowUser depuis follow_manager
+import 'package:soundmood/managers/follow_manager.dart';
 import 'auth_screen.dart';
 import 'track_details_screen.dart';
 import 'package:soundmood/models/track_model.dart';
 
 class UserProfileScreen extends StatefulWidget {
-  /// userId correspond à l'UID du profil à afficher.
-  /// Si isCurrentUser vaut true, on affiche le profil du propriétaire et on propose « Edit Profile ».
   final String userId;
   final bool isCurrentUser;
 
@@ -26,11 +24,9 @@ class UserProfileScreen extends StatefulWidget {
 class _UserProfileScreenState extends State<UserProfileScreen> {
   bool isFollowing = false;
 
-  // Permet de basculer le statut de follow pour un utilisateur
   void _toggleFollow(String targetUserId) async {
     if (isFollowing) {
-      await unfollowUser(
-          targetUserId); // Fonction définie dans follow_manager.dart
+      await unfollowUser(targetUserId);
     } else {
       await followUser(targetUserId);
     }
@@ -78,13 +74,10 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
           }
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          // Si le profil affiché n'est pas celui de l'utilisateur courant,
-          // on met à jour le statut de follow
           if (!widget.isCurrentUser) {
             final currentUserId = FirebaseAuth.instance.currentUser!.uid;
             List followers = data["followers"] ?? [];
             if (followers.contains(currentUserId) != isFollowing) {
-              // On met à jour le booléen de manière asynchrone
               WidgetsBinding.instance.addPostFrameCallback((_) {
                 setState(() {
                   isFollowing = followers.contains(currentUserId);
@@ -121,8 +114,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                       : 0,
                 ),
                 const SizedBox(height: 20),
-                // Si c'est le profil du propriétaire, on affiche « Edit Profile »
-                // Sinon, on affiche le bouton Follow/Unfollow
                 widget.isCurrentUser
                     ? ElevatedButton(
                         onPressed: () {
@@ -144,9 +135,8 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
                           _toggleFollow(widget.userId);
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: isFollowing
-                              ? Colors.grey
-                              : Colors.blue, // couleur selon le statut
+                          backgroundColor:
+                              isFollowing ? Colors.grey : Colors.blue,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(20),
                           ),
@@ -174,7 +164,6 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
     );
   }
 
-  /// Construit la liste des musiques favorites à partir des données utilisateur
   Widget _buildFavorites(Map<String, dynamic> data) {
     if (data["favorites"] == null) {
       return const Text("No favorites yet",
@@ -192,7 +181,7 @@ class _UserProfileScreenState extends State<UserProfileScreen> {
       child: ScrollConfiguration(
         behavior: MyCustomScrollBehavior(),
         child: PageView.builder(
-          padEnds: false, // This disables the automatic left/right padding.
+          padEnds: false,
           controller: PageController(viewportFraction: 0.3),
           itemCount: tracks.length,
           itemBuilder: (context, index) => _TrackItem(track: tracks[index]),
@@ -255,7 +244,6 @@ class _TrackItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () {
-        // Navigate to the TrackDetailsScreen when tapped.
         Navigator.push(
           context,
           MaterialPageRoute(

@@ -66,7 +66,6 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Retrieve the current user ID; if not logged in, this will be null.
     final loggedInUserId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(

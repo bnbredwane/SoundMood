@@ -3,13 +3,11 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:soundmood/ai/ai.dart';
 import 'package:soundmood/models/mood_model.dart';
 import 'package:soundmood/models/track_model.dart';
 import 'package:soundmood/services/deezer_service.dart';
 import '../widgets/track_detail_widget.dart';
-
-import '../ai/ai.dart';
-
 import 'package:firebase_auth/firebase_auth.dart';
 
 class PlayerScreen extends StatefulWidget {
@@ -24,8 +22,6 @@ class _PlayerScreenState extends State<PlayerScreen>
   late AudioPlayer _audioPlayer;
   bool _isPlaying = false;
   late PageController _pageController;
-  final String _prefsKey = 'moodPlayCounts';
-  Map<String, int> _moodPlayCounts = {};
   late SharedPreferences _prefs;
 
   final List<Mood> _availableMoods = [
@@ -46,36 +42,82 @@ class _PlayerScreenState extends State<PlayerScreen>
   String _errorMessage = '';
   late AnimationController _moodAnimationController;
 
+  late MoodPreferences _moodPreferences;
+
+  DateTime? _trackStartTime;
+
+  Mood? _currentMood;
+
   @override
   void initState() {
     super.initState();
-    _selectedMood = Mood('All', '🎶', []);
     _audioPlayer = AudioPlayer();
     _pageController = PageController();
     _moodAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 300),
     );
-    _initPreferences();
-    _initializePlayer();
+
+    _moodPreferences = MoodPreferences.initial('default');
+
+    _initPreferences().then((_) => _initializePlayer());
   }
 
   Future<void> _initPreferences() async {
     _prefs = await SharedPreferences.getInstance();
-    final counts = _prefs.getString(_prefsKey);
-    if (counts != null) {
-      setState(() {
-        _moodPlayCounts = Map<String, int>.from(json.decode(counts));
-      });
+    if (_prefs.containsKey('moodPreferences')) {
+      final data = json.decode(_prefs.getString('moodPreferences')!);
+      setState(() => _moodPreferences = MoodPreferences.fromJson(data));
+    } else {
+      final user = FirebaseAuth.instance.currentUser;
+      final userId = user?.uid ?? 'default';
+      setState(() => _moodPreferences = MoodPreferences.initial(userId));
     }
   }
 
+  Future<void> _persistMoodPreferences() async {
+    await _prefs.setString(
+        'moodPreferences', json.encode(_moodPreferences.toJson()));
+  }
+
   void _updatePlayCount(Mood mood) {
-    final count = (_moodPlayCounts[mood.name] ?? 0) + 1;
+    final newCount = (_moodPreferences.playCounts[mood.name] ?? 0) + 1;
     setState(() {
-      _moodPlayCounts[mood.name] = count;
+      _moodPreferences.playCounts[mood.name] = newCount;
     });
-    _prefs.setString(_prefsKey, json.encode(_moodPlayCounts));
+    _persistMoodPreferences();
+  }
+
+  void _trackFavorite(Mood mood) {
+    final newCount = (_moodPreferences.favorites[mood.name] ?? 0) + 1;
+    setState(() => _moodPreferences.favorites[mood.name] = newCount);
+    _adaptCoefficients(mood, true);
+    _persistMoodPreferences();
+  }
+
+  void _trackSkip(Mood mood) {
+    final newCount = (_moodPreferences.skips[mood.name] ?? 0) + 1;
+    setState(() => _moodPreferences.skips[mood.name] = newCount);
+    _adaptCoefficients(mood, false);
+    _persistMoodPreferences();
+  }
+
+  void _trackListenDuration(Mood mood, double seconds) {
+    final newDuration =
+        (_moodPreferences.listenDuration[mood.name] ?? 0) + seconds;
+    setState(() => _moodPreferences.listenDuration[mood.name] = newDuration);
+    _persistMoodPreferences();
+  }
+
+  void _adaptCoefficients(Mood mood, bool wasPositive) {
+    setState(() {
+      _moodPreferences = MoodRecommender.adaptCoefficients(
+        preferences: _moodPreferences,
+        selectedMood: mood.name,
+        successScore: wasPositive ? 0.8 : 0.2,
+      );
+    });
+    _persistMoodPreferences();
   }
 
   @override
@@ -86,37 +128,18 @@ class _PlayerScreenState extends State<PlayerScreen>
     super.dispose();
   }
 
-  List<double> _getTopMoodsFeatures() {
-    if (_moodPlayCounts.isEmpty) return [0.5, 0.5, 0.5];
-    final sortedEntries = _moodPlayCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    final total =
-        sortedEntries.fold(0, (sum, entry) => sum + entry.value).toDouble();
-    return [
-      sortedEntries[0].value / total,
-      sortedEntries.length > 1 ? sortedEntries[1].value / total : 0.0,
-      sortedEntries.length > 2 ? sortedEntries[2].value / total : 0.0,
-    ];
-  }
-
-  List<Mood> _getFallbackMoods() {
-    if (_moodPlayCounts.isEmpty) {
-      return _availableMoods.take(2).toList();
+  String _getRecommendedTag() {
+    if (_selectedMoods.isNotEmpty) {
+      return _selectedMoods.first.name.toLowerCase();
     }
-    final sorted = _moodPlayCounts.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return sorted
-        .take(2)
-        .map((entry) => _availableMoods.firstWhere((m) => m.name == entry.key))
-        .toList();
-  }
-
-  (Mood, String) _getRandomTag() {
-    final moodsToUse =
-        _selectedMoods.isNotEmpty ? _selectedMoods : _availableMoods;
-    final mood = moodsToUse[Random().nextInt(moodsToUse.length)];
-    final tag = mood.genres[Random().nextInt(mood.genres.length)];
-    return (mood, tag);
+    final recommendedMoods = MoodRecommender.getRecommendedMoods(
+      preferences: _moodPreferences,
+      availableMoods: _availableMoods,
+    );
+    final mood = recommendedMoods.isNotEmpty
+        ? recommendedMoods.first
+        : _availableMoods.first;
+    return mood.name.toLowerCase();
   }
 
   Future<void> _initializePlayer() async {
@@ -126,17 +149,8 @@ class _PlayerScreenState extends State<PlayerScreen>
         _errorMessage = '';
       });
 
-      if (_selectedMoods.isEmpty) {
-        List<Mood> recommendedMoods =
-            getRecommendedMoods6(_moodPlayCounts, _availableMoods);
-        if (recommendedMoods.isNotEmpty) {
-          _selectedMoods = recommendedMoods;
-          _selectedMood = recommendedMoods.first;
-        }
-      }
-
-      final (selectedMood, randomTag) = _getRandomTag();
-      final tracks = await DeezerService.searchTracks(randomTag);
+      final recommendedTag = _getRecommendedTag();
+      final tracks = await DeezerService.searchTracks(recommendedTag);
 
       setState(() {
         _tracks = tracks;
@@ -145,7 +159,11 @@ class _PlayerScreenState extends State<PlayerScreen>
 
       if (_tracks.isNotEmpty) {
         _currentPage = 0;
-        _playTrack(_tracks[0], selectedMood);
+        final recommendedMood = _availableMoods.firstWhere(
+          (m) => m.name.toLowerCase() == recommendedTag,
+          orElse: () => _availableMoods.first,
+        );
+        _playTrack(_tracks[0], recommendedMood);
       }
     } catch (e) {
       setState(() {
@@ -157,8 +175,23 @@ class _PlayerScreenState extends State<PlayerScreen>
 
   Future<void> _playTrack(Track track, Mood mood) async {
     try {
+      _trackStartTime = DateTime.now();
+      _currentMood = mood;
+
       await _audioPlayer.setUrl(track.url);
       _audioPlayer.play();
+
+      _audioPlayer.playerStateStream.listen((state) {
+        if (state.processingState == ProcessingState.completed &&
+            _trackStartTime != null) {
+          final duration =
+              DateTime.now().difference(_trackStartTime!).inSeconds;
+          _trackListenDuration(mood, duration.toDouble());
+
+          _trackStartTime = null;
+        }
+      });
+
       _updatePlayCount(mood);
       setState(() => _isPlaying = true);
     } catch (e) {
@@ -167,10 +200,36 @@ class _PlayerScreenState extends State<PlayerScreen>
   }
 
   void _onPageChanged(int index) {
+    if (_trackStartTime != null && _currentMood != null) {
+      final elapsed = DateTime.now().difference(_trackStartTime!).inSeconds;
+
+      _trackListenDuration(_currentMood!, elapsed.toDouble());
+
+      if (elapsed < 5) {
+        _trackSkip(_currentMood!);
+      }
+      _trackStartTime = null;
+    }
     setState(() => _currentPage = index);
     if (index < _tracks.length) {
-      final (selectedMood, _) = _getRandomTag();
-      _playTrack(_tracks[index], selectedMood);
+      final recommendedMood = _selectedMoods.isNotEmpty
+          ? _selectedMoods.first
+          : MoodRecommender.getRecommendedMoods(
+              preferences: _moodPreferences,
+              availableMoods: _availableMoods,
+            ).first;
+
+      final dynamicBoost = MoodRecommender.getDynamicBoost(
+          recommendedMood.name, _moodPreferences);
+      print('''
+Recommendation Factors for ${recommendedMood.name}:
+- Favorites: ${_moodPreferences.favorites[recommendedMood.name] ?? 0}
+- Skips: ${_moodPreferences.skips[recommendedMood.name] ?? 0}
+- Duration: ${_moodPreferences.listenDuration[recommendedMood.name]?.toStringAsFixed(1) ?? '0'}
+- Boost: ${dynamicBoost.toStringAsFixed(2)}
+    ''');
+
+      _playTrack(_tracks[index], recommendedMood);
     }
   }
 
@@ -299,7 +358,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                             const Icon(Icons.filter_list, color: Colors.white),
                         label: Text(
                           _selectedMoods.isEmpty
-                              ? "All Moods"
+                              ? "Recommended"
                               : "${_selectedMoods.length} Selected",
                           style: const TextStyle(color: Colors.white),
                         ),

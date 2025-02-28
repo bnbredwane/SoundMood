@@ -15,15 +15,13 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   final TextEditingController _usernameController = TextEditingController();
-  // We no longer need a text field for the profile image URL.
+
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
   final User? user = FirebaseAuth.instance.currentUser;
 
-  // Holds the image file selected by the user.
   XFile? _selectedImage;
 
-  // Keep the original lowercase username to check for changes.
   String? _originalUsernameLowercase;
 
   @override
@@ -32,7 +30,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _loadCurrentUserData();
   }
 
-  // Load current user data from Firestore.
   Future<void> _loadCurrentUserData() async {
     if (user != null) {
       final doc = await FirebaseFirestore.instance
@@ -50,7 +47,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // Pick an image from the gallery.
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
     final XFile? pickedFile =
@@ -62,7 +58,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // Upload the selected image to Firebase Storage and return its URL.
   Future<String?> _uploadImage(XFile imageFile) async {
     try {
       final storageRef = FirebaseStorage.instance
@@ -78,7 +73,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
-  // Check if the username already exists in Firestore (excluding current user's doc).
   Future<bool> _checkUsernameExists(String lowercaseUsername) async {
     final querySnapshot = await FirebaseFirestore.instance
         .collection("users")
@@ -92,7 +86,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     return false;
   }
 
-  // Update the profile in Firestore and FirebaseAuth.
   Future<void> _updateProfile() async {
     if (user == null) return;
     setState(() {
@@ -104,11 +97,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         profilePicUrl = await _uploadImage(_selectedImage!);
       }
 
-      // Get trimmed username and its lowercase version.
       final newUsername = _usernameController.text.trim();
       final lowercaseUsername = newUsername.toLowerCase();
 
-      // If the username has changed, check if it already exists.
       if (_originalUsernameLowercase != null &&
           lowercaseUsername != _originalUsernameLowercase) {
         bool exists = await _checkUsernameExists(lowercaseUsername);
@@ -117,7 +108,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         }
       }
 
-      // Update the user's document.
       await FirebaseFirestore.instance
           .collection("users")
           .doc(user!.uid)
@@ -127,7 +117,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         if (profilePicUrl != null) "profilePic": profilePicUrl,
       });
 
-      // If a new password was provided, update it.
       if (_passwordController.text.isNotEmpty) {
         await user!.updatePassword(_passwordController.text);
       }
@@ -156,7 +145,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Display the current profile image if available.
     Widget imageWidget;
     if (_selectedImage != null) {
       imageWidget = CircleAvatar(

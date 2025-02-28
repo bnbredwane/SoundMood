@@ -42,7 +42,6 @@ class Track {
     );
   }
 
-  // Convert a Track instance into a JSON map.
   Map<String, dynamic> toJson() {
     return {
       'id': id,

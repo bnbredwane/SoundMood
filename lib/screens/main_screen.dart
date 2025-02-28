@@ -17,13 +17,11 @@ class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
   final PageController _pageController = PageController();
 
-  // Dynamically return the profile screen based on authentication state.
   Widget get profileScreen {
     final currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       return UserProfileScreen(userId: currentUser.uid, isCurrentUser: true);
     } else {
-      // Return AuthScreen if no user is logged in.
       return const AuthScreen();
     }
   }

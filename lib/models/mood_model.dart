@@ -1,4 +1,3 @@
-//mood_model
 class Mood {
   final String name;
   final String emoji;
