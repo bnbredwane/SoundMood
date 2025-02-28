@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:soundmood/models/track_model.dart';
 import '../widgets/track_detail_widget.dart';
 
@@ -65,9 +66,11 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // Retrieve the current user ID; if not logged in, this will be null.
+    final loggedInUserId = FirebaseAuth.instance.currentUser?.uid;
+
     return Scaffold(
       backgroundColor: Colors.black,
-
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -90,6 +93,7 @@ class _TrackDetailsScreenState extends State<TrackDetailsScreen> {
         audioPlayer: _audioPlayer,
         isPlaying: _isPlaying,
         onTogglePlayPause: _togglePlayPause,
+        loggedInUserId: loggedInUserId,
       ),
     );
   }

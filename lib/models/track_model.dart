@@ -41,4 +41,16 @@ class Track {
       duration: json['duration'] ?? 0,
     );
   }
+
+  // Convert a Track instance into a JSON map.
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'artist': artist,
+      'albumArt': albumArt,
+      'url': url,
+      'duration': duration,
+    };
+  }
 }

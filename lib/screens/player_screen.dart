@@ -10,6 +10,8 @@ import '../widgets/track_detail_widget.dart';
 
 import '../ai/ai.dart';
 
+import 'package:firebase_auth/firebase_auth.dart';
+
 class PlayerScreen extends StatefulWidget {
   const PlayerScreen({super.key});
 
@@ -263,6 +265,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                       itemCount: _tracks.length,
                       onPageChanged: _onPageChanged,
                       itemBuilder: (context, index) {
+                        final user = FirebaseAuth.instance.currentUser;
                         return TrackDetailWidget(
                           track: _tracks[index],
                           audioPlayer: _audioPlayer,
@@ -277,6 +280,7 @@ class _PlayerScreenState extends State<PlayerScreen>
                               _isPlaying = !_isPlaying;
                             });
                           },
+                          loggedInUserId: user?.uid,
                         );
                       },
                     ),
